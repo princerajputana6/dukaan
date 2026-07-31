@@ -34,6 +34,7 @@ export default async function AppLayout({ children }) {
           name: user.business.name,
           plan: user.business.plan,
           storeLimit: user.business.storeLimit,
+          type: user.business.type || "retail",
         }
       : null,
   };

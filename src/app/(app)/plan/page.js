@@ -208,6 +208,7 @@ export default function PlanPage() {
       </Grid>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Request Plan Upgrade</DialogTitle>
         <DialogContent>
           {error && (
@@ -242,10 +243,11 @@ export default function PlanPage() {
           <Button color="inherit" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={submit}>
+          <Button type="submit" variant="contained">
             Send Request
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
 
       <Snackbar

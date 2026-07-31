@@ -221,6 +221,7 @@ export default function StoresPage() {
       </Grid>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); save(); }}>
         <DialogTitle sx={{ fontWeight: 700 }}>{editing ? "Edit Store" : "Add Store"}</DialogTitle>
         <DialogContent>
           {error && (
@@ -239,10 +240,11 @@ export default function StoresPage() {
           <Button color="inherit" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={save}>
+          <Button type="submit" variant="contained">
             Save
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
 
       <Snackbar

@@ -213,6 +213,7 @@ export default function TeamPage() {
       </Card>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); save(); }}>
         <DialogTitle sx={{ fontWeight: 700 }}>
           {editing ? "Edit Manager" : "Add Manager"}
         </DialogTitle>
@@ -264,10 +265,11 @@ export default function TeamPage() {
           <Button color="inherit" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={save}>
+          <Button type="submit" variant="contained">
             Save
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
 
       <Snackbar

@@ -29,10 +29,18 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
+import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
+import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import { formatCurrency } from "@/lib/format";
+import { computeGst, printReceipt, shareReceiptPdf } from "@/lib/receipt";
+import { useBusiness } from "@/components/BusinessContext";
 
 export default function PosPage() {
+  const { isFood } = useBusiness();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [meInfo, setMeInfo] = useState(null);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState(0);
@@ -50,10 +58,28 @@ export default function PosPage() {
 
   useEffect(() => {
     load();
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((res) => setCategories(res.data || []));
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((res) => setMeInfo(res.data || null));
   }, []);
 
+  // Categories that actually have products, for the top filter bar.
+  const categoryNames = useMemo(() => {
+    const used = new Set(products.map((p) => p.category).filter(Boolean));
+    const ordered = categories.map((c) => c.name).filter((n) => used.has(n));
+    // include any product categories not in the category list
+    for (const n of used) if (!ordered.includes(n)) ordered.push(n);
+    return ordered;
+  }, [products, categories]);
+
   const filtered = useMemo(() => {
-    const list = products.filter((p) => p.active !== false);
+    let list = products.filter((p) => p.active !== false);
+    if (categoryFilter !== "all") {
+      list = list.filter((p) => p.category === categoryFilter);
+    }
     if (!search) return list;
     const s = search.toLowerCase();
     return list.filter(
@@ -62,7 +88,7 @@ export default function PosPage() {
         (p.sku || "").toLowerCase().includes(s) ||
         (p.barcode || "").toLowerCase().includes(s)
     );
-  }, [products, search]);
+  }, [products, search, categoryFilter]);
 
   const addToCart = (product) => {
     if (product.stock <= 0) {
@@ -178,7 +204,7 @@ export default function PosPage() {
         Point of Sale
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Tap a product to add it to the bill
+        Tap {isFood ? "an item" : "a product"} to add it to the bill
       </Typography>
 
       <Grid container spacing={2.5}>
@@ -206,6 +232,38 @@ export default function PosPage() {
               }}
             />
           </Card>
+
+          {categoryNames.length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                mb: 2,
+                overflowX: "auto",
+                pb: 1,
+                "&::-webkit-scrollbar": { height: 6 },
+                "&::-webkit-scrollbar-thumb": { bgcolor: "divider", borderRadius: 3 },
+              }}
+            >
+              <Chip
+                label="All"
+                color={categoryFilter === "all" ? "primary" : "default"}
+                variant={categoryFilter === "all" ? "filled" : "outlined"}
+                onClick={() => setCategoryFilter("all")}
+                sx={{ flexShrink: 0 }}
+              />
+              {categoryNames.map((name) => (
+                <Chip
+                  key={name}
+                  label={name}
+                  color={categoryFilter === name ? "primary" : "default"}
+                  variant={categoryFilter === name ? "filled" : "outlined"}
+                  onClick={() => setCategoryFilter(name)}
+                  sx={{ flexShrink: 0 }}
+                />
+              ))}
+            </Box>
+          )}
 
           <Grid container spacing={1.5}>
             {filtered.map((p) => {
@@ -427,22 +485,55 @@ export default function PosPage() {
               ))}
               <Divider sx={{ my: 1 }} />
               <Row label="Subtotal" value={formatCurrency(receipt.subTotal)} />
-              <Row label="Discount" value={`- ${formatCurrency(receipt.discount)}`} />
-              <Row label="Tax" value={`+ ${formatCurrency(receipt.tax)}`} />
+              {receipt.discount > 0 && (
+                <Row label="Discount" value={`- ${formatCurrency(receipt.discount)}`} />
+              )}
+              {receipt.tax > 0 && (
+                <Row label="Tax" value={`+ ${formatCurrency(receipt.tax)}`} />
+              )}
               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
                 <Typography variant="subtitle1">Total Paid</Typography>
                 <Typography variant="subtitle1" color="primary.main">
                   {formatCurrency(receipt.total)}
                 </Typography>
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              {(() => {
+                const gst = computeGst(
+                  receipt.total,
+                  meInfo?.business?.gstRate,
+                  meInfo?.business?.pricesIncludeTax
+                );
+                if (!gst) return null;
+                return (
+                  <Box sx={{ mt: 1, pt: 1, borderTop: "1px dashed", borderColor: "divider" }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Prices include taxes
+                    </Typography>
+                    <Row label={`CGST @ ${gst.half}%`} value={formatCurrency(gst.cgst)} />
+                    <Row label={`SGST @ ${gst.half}%`} value={formatCurrency(gst.sgst)} />
+                    <Row label="Total GST" value={formatCurrency(gst.total)} />
+                  </Box>
+                );
+              })()}
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
                 Paid via {receipt.paymentMethod?.toUpperCase()}
               </Typography>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => window.print()}>Print</Button>
+        <DialogActions sx={{ flexWrap: "wrap", gap: 1 }}>
+          <Button
+            startIcon={<PrintRoundedIcon />}
+            onClick={() => printReceipt(receipt, meInfo?.business, meInfo?.store)}
+          >
+            Print
+          </Button>
+          <Button
+            startIcon={<IosShareRoundedIcon />}
+            onClick={() => shareReceiptPdf(receipt, meInfo?.business, meInfo?.store)}
+          >
+            Share PDF
+          </Button>
           <Button variant="contained" onClick={() => setReceipt(null)}>
             New Sale
           </Button>

@@ -20,9 +20,11 @@ export async function GET() {
       { $group: { _id: "$category", count: { $sum: 1 } } },
     ]);
     const countMap = Object.fromEntries(counts.map((c) => [c._id, c.count]));
+    const nameById = Object.fromEntries(categories.map((c) => [String(c._id), c.name]));
     const data = categories.map((c) => ({
       ...c,
       productCount: countMap[c.name] || 0,
+      parentName: c.parent ? nameById[String(c.parent)] || null : null,
     }));
     return NextResponse.json({ data });
   } catch (err) {
@@ -39,8 +41,29 @@ export async function POST(request) {
     const body = await request.json();
     if (!body.name)
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
+
+    // Validate parent (must be a top-level category in the same store).
+    let parent = null;
+    if (body.parent) {
+      const parentCat = await Category.findOne({
+        _id: body.parent,
+        store: scope.storeId,
+      });
+      if (!parentCat)
+        return NextResponse.json({ error: "Invalid parent category" }, { status: 400 });
+      if (parentCat.parent)
+        return NextResponse.json(
+          { error: "Only one level of sub-categories is allowed" },
+          { status: 400 }
+        );
+      parent = parentCat._id;
+    }
+
     const category = await Category.create({
-      ...body,
+      name: body.name,
+      description: body.description || "",
+      color: body.color || "#2F7EDA",
+      parent,
       business: scope.businessId,
       store: scope.storeId,
     });

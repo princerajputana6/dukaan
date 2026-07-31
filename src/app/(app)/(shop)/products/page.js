@@ -22,12 +22,17 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddBoxRoundedIcon from "@mui/icons-material/AddBoxRounded";
+import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import ProductDialog from "@/components/ProductDialog";
+import ReceiptImportDialog from "@/components/ReceiptImportDialog";
 import { formatCurrency } from "@/lib/format";
+import { useBusiness } from "@/components/BusinessContext";
 
 export default function ProductsPage() {
+  const { labels } = useBusiness();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [importOpen, setImportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -99,7 +104,7 @@ export default function ProductsPage() {
   const columns = [
     {
       field: "name",
-      headerName: "Product",
+      headerName: labels.Item,
       flex: 1.4,
       minWidth: 180,
       renderCell: (params) => (
@@ -188,21 +193,30 @@ export default function ProductsPage() {
         sx={{ mb: 3 }}
       >
         <Box>
-          <Typography variant="h4">Inventory</Typography>
+          <Typography variant="h4">{labels.inventory}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {products.length} products · manage stock and pricing
+            {products.length} {labels.items} · manage stock and pricing
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={() => {
-            setEditing(null);
-            setDialogOpen(true);
-          }}
-        >
-          Add Product
-        </Button>
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="outlined"
+            startIcon={<ReceiptLongRoundedIcon />}
+            onClick={() => setImportOpen(true)}
+          >
+            Import Receipt
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+          >
+            {labels.addItem}
+          </Button>
+        </Stack>
       </Stack>
 
       <Card sx={{ p: 2, mb: 2 }}>
@@ -261,6 +275,16 @@ export default function ProductsPage() {
           }}
         />
       </Card>
+
+      <ReceiptImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        categories={categories}
+        onImported={(count) => {
+          setToast({ severity: "success", msg: `${count} items added to inventory` });
+          load();
+        }}
+      />
 
       <ProductDialog
         open={dialogOpen}

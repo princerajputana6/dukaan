@@ -20,7 +20,22 @@ export async function PUT(request, { params }) {
     const { id } = await params;
     const body = await request.json();
     const allowed = {};
-    for (const k of ["name", "ownerName", "email", "phone", "address", "plan", "storeLimit", "status"]) {
+    for (const k of [
+      "name",
+      "ownerName",
+      "email",
+      "phone",
+      "address",
+      "plan",
+      "storeLimit",
+      "status",
+      "type",
+      "gstin",
+      "fssai",
+      "gstRate",
+      "pricesIncludeTax",
+      "receiptFooter",
+    ]) {
       if (body[k] !== undefined) allowed[k] = body[k];
     }
     const business = await Business.findByIdAndUpdate(id, allowed, {

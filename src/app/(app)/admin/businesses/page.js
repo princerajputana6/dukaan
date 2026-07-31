@@ -46,6 +46,10 @@ const EMPTY = {
   storeLimit: 1,
   username: "",
   password: "",
+  type: "retail",
+  gstin: "",
+  fssai: "",
+  gstRate: 0,
 };
 
 function slugify(str) {
@@ -146,6 +150,10 @@ function BusinessesPageInner() {
       address: b.address || "",
       plan: b.plan,
       storeLimit: b.storeLimit,
+      type: b.type || "retail",
+      gstin: b.gstin || "",
+      fssai: b.fssai || "",
+      gstRate: b.gstRate || 0,
     });
     setError("");
     setOpen(true);
@@ -156,6 +164,8 @@ function BusinessesPageInner() {
     setForm((f) => {
       const next = { ...f, [k]: v };
       if (k === "plan" && !editing) next.storeLimit = PLAN_LIMITS[v] || 1;
+      // Suggest a sensible GST rate when switching business type.
+      if (k === "type") next.gstRate = v === "food" ? 5 : 0;
       return next;
     });
   };
@@ -176,6 +186,10 @@ function BusinessesPageInner() {
             address: form.address,
             plan: form.plan,
             storeLimit: Number(form.storeLimit),
+            type: form.type,
+            gstin: form.gstin,
+            fssai: form.fssai,
+            gstRate: Number(form.gstRate) || 0,
           }),
         });
         const json = await res.json();
@@ -388,6 +402,7 @@ function BusinessesPageInner() {
 
       {/* Create / edit dialog */}
       <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); if (!saving) save(); }}>
         <DialogTitle sx={{ fontWeight: 700 }}>
           {editing ? "Edit Business & Plan" : "Onboard New Business"}
         </DialogTitle>
@@ -431,6 +446,41 @@ function BusinessesPageInner() {
               />
             </Grid>
 
+            <Grid item xs={12}>
+              <Divider sx={{ my: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  BUSINESS TYPE & TAX
+                </Typography>
+              </Divider>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField select label="Business type" value={form.type} onChange={set("type")} fullWidth>
+                <MenuItem value="retail">Retail shop</MenuItem>
+                <MenuItem value="food">Food / Restaurant</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="GST rate %"
+                type="number"
+                value={form.gstRate}
+                onChange={set("gstRate")}
+                fullWidth
+                helperText="0 = no GST on receipts"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="GSTIN (optional)" value={form.gstin} onChange={set("gstin")} fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="FSSAI licence (optional)"
+                value={form.fssai}
+                onChange={set("fssai")}
+                fullWidth
+              />
+            </Grid>
+
             {!editing && (
               <>
                 <Grid item xs={12}>
@@ -454,10 +504,11 @@ function BusinessesPageInner() {
           <Button color="inherit" onClick={closeDialog}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={save} disabled={saving}>
+          <Button type="submit" variant="contained" disabled={saving}>
             {saving ? "Saving…" : editing ? "Save Changes" : "Create Business"}
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
 
       {/* Credentials confirmation */}

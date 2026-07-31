@@ -17,6 +17,12 @@ const CategorySchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
     color: { type: String, default: "#2F7EDA" },
+    // optional parent for sub-categories (null = top-level category)
+    parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -38,6 +38,7 @@ import MarkEmailUnreadRoundedIcon from "@mui/icons-material/MarkEmailUnreadRound
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import Logo from "@/components/Logo";
+import { BusinessProvider } from "@/components/BusinessContext";
 
 const DRAWER_WIDTH = 260;
 
@@ -84,7 +85,10 @@ export default function AppShell({ user, stores = [], activeStoreId, children })
   const pathname = usePathname();
   const router = useRouter();
 
-  const nav = NAV_BY_ROLE[user.role] || [];
+  const isFood = user.business?.type === "food";
+  const nav = (NAV_BY_ROLE[user.role] || []).map((n) =>
+    n.href === "/products" && isFood ? { ...n, label: "Menu" } : n
+  );
   const flat = nav.filter((n) => n.href);
 
   const go = (href) => {
@@ -366,7 +370,9 @@ export default function AppShell({ user, stores = [], activeStoreId, children })
         }}
       >
         <Toolbar />
-        <Box sx={{ p: { xs: 2, md: 3 } }}>{children}</Box>
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
+          <BusinessProvider business={user.business}>{children}</BusinessProvider>
+        </Box>
       </Box>
     </Box>
   );

@@ -44,6 +44,28 @@ they raise an upgrade request, which the Super Admin approves to raise the store
   first store instead of hitting an error; the Super Admin can turn an account request into
   a fully pre-filled business in one click.
 
+## Retail & food (restaurant / cart) support
+
+- **Business type** — each business is *retail* or *food*. Food carts and restaurants get
+  a **GST tax-inclusive receipt** with the CGST + SGST split, GSTIN and FSSAI licence in
+  the header, and a custom footer — configured per business by the Super Admin.
+- **Thermal bill printing** — the POS prints a 58 mm receipt via the browser's print
+  dialog, so it works with any USB/Bluetooth thermal bill printer set as default. See
+  [`src/lib/receipt.js`](src/lib/receipt.js).
+- **Share / download PDF** — every receipt (at checkout and from Sales history) can be
+  exported as a thermal-width PDF and shared straight to WhatsApp via the Web Share API on
+  mobile, or downloaded on desktop. Past invoices also have a one-tap **reprint**.
+- **Adaptive wording** — food businesses see "Menu / item / Add Item" across Inventory,
+  Low Stock and Categories; retail keeps "Inventory / product / Add Product".
+- **Receipt → inventory (OCR)** — snap a supplier receipt, and on-device OCR
+  (tesseract.js) reads the line items into an editable table you confirm before
+  bulk-adding to inventory. No API keys, runs in the browser.
+- **Sub-categories** — categories can nest one level (e.g. *Cigarettes → Premium*);
+  assign a parent when creating or editing.
+- **POS category filters** — category chips across the top of the POS let staff filter
+  the product grid instantly.
+- **Keyboard-friendly** — every add/edit form submits on **Enter**.
+
 ## Tech stack
 
 | Layer     | Choice                                   |

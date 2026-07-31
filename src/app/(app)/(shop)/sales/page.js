@@ -24,7 +24,11 @@ import {
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import KeyboardArrowUpRoundedIcon from "@mui/icons-material/KeyboardArrowUpRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
+import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
+import Tooltip from "@mui/material/Tooltip";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { printReceipt, shareReceiptPdf } from "@/lib/receipt";
 
 const METHOD_COLOR = {
   cash: "success",
@@ -38,8 +42,12 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [search, setSearch] = useState("");
+  const [meInfo, setMeInfo] = useState(null);
 
   useEffect(() => {
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((res) => setMeInfo(res.data || null));
     fetch("/api/sales?limit=200")
       .then((r) => r.json())
       .then((res) => setSales(res.data || []))
@@ -174,9 +182,31 @@ export default function SalesPage() {
                       </TableCell>
                       <TableCell align="right">{sale.items.length}</TableCell>
                       <TableCell align="right">
-                        <Typography fontWeight={700}>
-                          {formatCurrency(sale.total)}
-                        </Typography>
+                        <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
+                          <Typography fontWeight={700}>
+                            {formatCurrency(sale.total)}
+                          </Typography>
+                          <Tooltip title="Reprint receipt">
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                printReceipt(sale, meInfo?.business, meInfo?.store)
+                              }
+                            >
+                              <PrintRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Share / download PDF">
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                shareReceiptPdf(sale, meInfo?.business, meInfo?.store)
+                              }
+                            >
+                              <IosShareRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                     <TableRow>

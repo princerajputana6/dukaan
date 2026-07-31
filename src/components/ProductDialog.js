@@ -11,7 +11,9 @@ import {
   MenuItem,
   Button,
   Autocomplete,
+  Box,
 } from "@mui/material";
+import { useBusiness } from "@/components/BusinessContext";
 
 const UNITS = ["pcs", "pack", "box", "kg", "gm", "ltr", "ml", "strip"];
 
@@ -29,6 +31,7 @@ const EMPTY = {
 };
 
 export default function ProductDialog({ open, onClose, onSaved, product, categories }) {
+  const { labels } = useBusiness();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -84,14 +87,21 @@ export default function ProductDialog({ open, onClose, onSaved, product, categor
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <Box
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSave();
+        }}
+      >
       <DialogTitle sx={{ fontWeight: 700 }}>
-        {product?._id ? "Edit Product" : "Add Product"}
+        {product?._id ? `Edit ${labels.Item}` : labels.addItem}
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 0 }}>
           <Grid item xs={12}>
             <TextField
-              label="Product name"
+              label={`${labels.Item} name`}
               value={form.name}
               onChange={set("name")}
               fullWidth
@@ -201,10 +211,11 @@ export default function ProductDialog({ open, onClose, onSaved, product, categor
         <Button onClick={onClose} color="inherit">
           Cancel
         </Button>
-        <Button onClick={handleSave} variant="contained" disabled={saving}>
-          {saving ? "Saving…" : "Save Product"}
+        <Button type="submit" variant="contained" disabled={saving}>
+          {saving ? "Saving…" : `Save ${labels.Item}`}
         </Button>
       </DialogActions>
+      </Box>
     </Dialog>
   );
 }

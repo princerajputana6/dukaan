@@ -21,8 +21,10 @@ import {
 import AddBoxRoundedIcon from "@mui/icons-material/AddBoxRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { formatCurrency } from "@/lib/format";
+import { useBusiness } from "@/components/BusinessContext";
 
 export default function LowStockPage() {
+  const { labels } = useBusiness();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -62,7 +64,7 @@ export default function LowStockPage() {
         <Typography variant="h4">Low Stock</Typography>
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Products at or below their reorder threshold — restock these soon
+        {labels.Item} entries at or below their reorder threshold — restock these soon
       </Typography>
 
       <Card>
@@ -73,7 +75,7 @@ export default function LowStockPage() {
               All stocked up 🎉
             </Typography>
             <Typography color="text.secondary">
-              No products are below their reorder level right now.
+              No {labels.items} are below their reorder level right now.
             </Typography>
           </Box>
         ) : (
@@ -81,7 +83,7 @@ export default function LowStockPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Product</TableCell>
+                  <TableCell>{labels.Item}</TableCell>
                   <TableCell>Category</TableCell>
                   <TableCell align="right">In Stock</TableCell>
                   <TableCell align="right">Threshold</TableCell>

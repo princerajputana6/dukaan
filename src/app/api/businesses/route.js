@@ -60,6 +60,11 @@ export async function POST(request) {
       storeLimit,
       username,
       password,
+      type = "retail",
+      gstin = "",
+      fssai = "",
+      gstRate = 0,
+      pricesIncludeTax = true,
     } = body;
 
     if (!name || !ownerName || !username || !password) {
@@ -82,6 +87,11 @@ export async function POST(request) {
       address,
       plan,
       storeLimit: storeLimit || PLAN_LIMITS[plan] || 1,
+      type,
+      gstin,
+      fssai,
+      gstRate: Number(gstRate) || 0,
+      pricesIncludeTax,
       createdBy: me._id,
     });
 

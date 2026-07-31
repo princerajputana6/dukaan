@@ -10,6 +10,14 @@ const BusinessSchema = new mongoose.Schema(
     phone: { type: String, trim: true, default: "" },
     address: { type: String, trim: true, default: "" },
     gstin: { type: String, trim: true, default: "" },
+    // retail shop vs food/restaurant — affects labels and receipt format
+    type: { type: String, enum: ["retail", "food"], default: "retail" },
+    fssai: { type: String, trim: true, default: "" },
+    // GST rate as a percentage (e.g. 5 for food, 12/18 for retail). 0 = no GST shown.
+    gstRate: { type: Number, default: 0, min: 0 },
+    // whether selling prices already include GST (common for food carts)
+    pricesIncludeTax: { type: Boolean, default: true },
+    receiptFooter: { type: String, default: "Thank you! Visit again." },
     // Plan controls how many stores the owner may create.
     plan: {
       type: String,
