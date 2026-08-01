@@ -107,6 +107,12 @@ export function buildReceiptHTML(sale, business, store) {
   ${sale.discount ? line("Discount", "-" + money(sale.discount)) : ""}
   ${sale.tax ? line("Tax", "+" + money(sale.tax)) : ""}
   <div class="row big"><span>TOTAL</span><span>₹${money(sale.total)}</span></div>
+  ${
+    sale.customerName && sale.customerName !== "Walk-in"
+      ? line("Customer", escapeHtml(sale.customerName)) +
+        (sale.pointsEarned ? line("Points earned", "+" + sale.pointsEarned) : "")
+      : ""
+  }
   ${gstHtml}
   <div class="divider"></div>
   <div class="center small">${escapeHtml(b.receiptFooter || "Thank you! Visit again.")}</div>
@@ -214,6 +220,10 @@ export async function buildReceiptPdf(sale, business, store) {
   if (sale.discount) row("Discount", "-" + rs(sale.discount), 8);
   if (sale.tax) row("Tax", "+" + rs(sale.tax), 8);
   row("TOTAL", rs(sale.total), 10, true);
+  if (sale.customerName && sale.customerName !== "Walk-in") {
+    row("Customer", String(sale.customerName), 7);
+    if (sale.pointsEarned) row("Points earned", "+" + sale.pointsEarned, 7);
+  }
   if (gst) {
     divider();
     center("Above prices include taxes", 6.5);

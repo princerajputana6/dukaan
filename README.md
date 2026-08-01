@@ -66,6 +66,22 @@ they raise an upgrade request, which the Super Admin approves to raise the store
   the product grid instantly.
 - **Keyboard-friendly** — every add/edit form submits on **Enter**.
 
+## AI Smart Insights
+
+The dashboard surfaces a daily, plain-English action list — reorder suggestions with sales
+velocity, best/slow movers, week-over-week revenue trend and busiest hour — from a
+deterministic analytics engine ([`src/lib/insights.js`](src/lib/insights.js)) that needs no
+API key. Set `ANTHROPIC_API_KEY` in `.env.local` to upgrade the summary headline to a
+Claude-generated one (via `@anthropic-ai/sdk`, `claude-opus-5`); everything still works
+without it.
+
+## Design system
+
+A modern, animated MUI theme ([`src/lib/theme.js`](src/lib/theme.js)): gradient primary
+buttons, soft layered card shadows with hover lift, a glassmorphism app bar, refined
+typography and a shared scroll-reveal (`Reveal`) + count-up (`Counter`) animation kit used
+across an overhauled marketing landing page and redesigned dashboards.
+
 ## Tech stack
 
 | Layer     | Choice                                   |

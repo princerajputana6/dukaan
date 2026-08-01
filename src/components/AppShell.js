@@ -36,6 +36,8 @@ import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRou
 import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import MarkEmailUnreadRoundedIcon from "@mui/icons-material/MarkEmailUnreadRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
+import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
+import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import Logo from "@/components/Logo";
 import { BusinessProvider } from "@/components/BusinessContext";
@@ -52,9 +54,11 @@ const NAV_BY_ROLE = {
     { section: "Operations" },
     { label: "Dashboard", href: "/dashboard", icon: <DashboardRoundedIcon /> },
     { label: "Point of Sale", href: "/pos", icon: <PointOfSaleRoundedIcon /> },
+    { label: "Register", href: "/register", icon: <AccountBalanceWalletRoundedIcon /> },
     { label: "Inventory", href: "/products", icon: <Inventory2RoundedIcon /> },
     { label: "Low Stock", href: "/low-stock", icon: <WarningAmberRoundedIcon /> },
     { label: "Categories", href: "/categories", icon: <CategoryRoundedIcon /> },
+    { label: "Customers", href: "/customers", icon: <PeopleAltRoundedIcon /> },
     { label: "Sales", href: "/sales", icon: <ReceiptLongRoundedIcon /> },
     { label: "Reports", href: "/reports", icon: <InsightsRoundedIcon /> },
     { section: "Management" },
@@ -66,9 +70,11 @@ const NAV_BY_ROLE = {
     { section: "Operations" },
     { label: "Dashboard", href: "/dashboard", icon: <DashboardRoundedIcon /> },
     { label: "Point of Sale", href: "/pos", icon: <PointOfSaleRoundedIcon /> },
+    { label: "Register", href: "/register", icon: <AccountBalanceWalletRoundedIcon /> },
     { label: "Inventory", href: "/products", icon: <Inventory2RoundedIcon /> },
     { label: "Low Stock", href: "/low-stock", icon: <WarningAmberRoundedIcon /> },
     { label: "Categories", href: "/categories", icon: <CategoryRoundedIcon /> },
+    { label: "Customers", href: "/customers", icon: <PeopleAltRoundedIcon /> },
     { label: "Sales", href: "/sales", icon: <ReceiptLongRoundedIcon /> },
   ],
 };

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Sale from "@/models/Sale";
 import Product from "@/models/Product";
+import RegisterSession from "@/models/RegisterSession";
+import Customer from "@/models/Customer";
 import { resolveScope } from "@/lib/scope";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +42,7 @@ export async function POST(request) {
       return NextResponse.json({ error: scope.error.message }, { status: scope.error.status });
     await dbConnect();
     const body = await request.json();
-    const { items = [], discount = 0, tax = 0, paymentMethod, customerName, note } = body;
+    const { items = [], discount = 0, tax = 0, paymentMethod, customerName, customerId, note } = body;
 
     if (!items.length) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
@@ -90,11 +92,24 @@ export async function POST(request) {
     const total = Math.max(0, subTotal - discount + tax);
     const netProfit = profit - discount;
 
+    // Attach to an open register session, if one exists for this store.
+    const openSession = await RegisterSession.findOne({ store: scope.storeId, status: "open" }).select("_id");
+
+    // Loyalty: 1 point per ₹100 spent, credited to the linked customer.
+    let customer = null;
+    if (customerId) {
+      customer = await Customer.findOne({ _id: customerId, store: scope.storeId });
+    }
+    const pointsEarned = customer ? Math.floor(total / 100) : 0;
+
     const sale = await Sale.create({
       business: scope.businessId,
       store: scope.storeId,
       cashier: scope.user._id,
       cashierName: scope.user.name,
+      session: openSession?._id || null,
+      customer: customer?._id || null,
+      pointsEarned,
       invoiceNo: genInvoiceNo(),
       items: lineItems,
       subTotal,
@@ -103,7 +118,7 @@ export async function POST(request) {
       total,
       profit: netProfit,
       paymentMethod: paymentMethod || "cash",
-      customerName: customerName || "Walk-in",
+      customerName: customer?.name || customerName || "Walk-in",
       note: note || "",
     });
 
@@ -112,6 +127,14 @@ export async function POST(request) {
         Product.updateOne({ _id: li.product }, { $inc: { stock: -li.quantity } })
       )
     );
+
+    if (customer) {
+      customer.points += pointsEarned;
+      customer.totalSpent += total;
+      customer.visits += 1;
+      customer.lastVisit = new Date();
+      await customer.save();
+    }
 
     return NextResponse.json({ data: sale }, { status: 201 });
   } catch (err) {

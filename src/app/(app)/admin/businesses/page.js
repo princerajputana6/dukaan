@@ -34,6 +34,7 @@ import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
+import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 
 const PLAN_LIMITS = { starter: 1, growth: 3, enterprise: 10 };
 const EMPTY = {
@@ -81,6 +82,8 @@ function BusinessesPageInner() {
   const [onboardingId, setOnboardingId] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuBiz, setMenuBiz] = useState(null);
+  const [resetBiz, setResetBiz] = useState(null);
+  const [resetPw, setResetPw] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -253,6 +256,22 @@ function BusinessesPageInner() {
     }
   };
 
+  const doResetPassword = async () => {
+    const res = await fetch(`/api/businesses/${resetBiz._id}/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: resetPw || undefined }),
+    });
+    const json = await res.json();
+    if (res.ok) {
+      setResetBiz(null);
+      setResetPw("");
+      setCreated({ username: json.data.username, password: json.data.password, name: resetBiz.name });
+    } else {
+      setToast({ severity: "error", msg: json.error || "Could not reset password" });
+    }
+  };
+
   const removeBusiness = async () => {
     const b = menuBiz;
     closeMenu();
@@ -392,6 +411,19 @@ function BusinessesPageInner() {
             {menuBiz?.status === "active" ? "Suspend business" : "Reactivate business"}
           </ListItemText>
         </MenuItem>
+        <MenuItem
+          onClick={() => {
+            const b = menuBiz;
+            closeMenu();
+            setResetPw("");
+            setResetBiz(b);
+          }}
+        >
+          <ListItemIcon>
+            <KeyRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Reset owner password</ListItemText>
+        </MenuItem>
         <MenuItem onClick={removeBusiness} sx={{ color: "error.main" }}>
           <ListItemIcon>
             <DeleteOutlineRoundedIcon fontSize="small" color="error" />
@@ -399,6 +431,37 @@ function BusinessesPageInner() {
           <ListItemText>Delete business</ListItemText>
         </MenuItem>
       </Menu>
+
+      {/* Reset owner password dialog */}
+      <Dialog open={!!resetBiz} onClose={() => setResetBiz(null)} maxWidth="xs" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); doResetPassword(); }}>
+          <DialogTitle sx={{ fontWeight: 700 }}>Reset Owner Password</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Set a new login password for the owner of{" "}
+              <strong>{resetBiz?.name}</strong>
+              {resetBiz?.owner ? ` (@${resetBiz.owner.username})` : ""}. Leave blank to
+              auto-generate one.
+            </Typography>
+            <TextField
+              label="New password (optional)"
+              value={resetPw}
+              onChange={(e) => setResetPw(e.target.value)}
+              fullWidth
+              autoFocus
+              placeholder="Auto-generate"
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button color="inherit" onClick={() => setResetBiz(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained">
+              Reset Password
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
 
       {/* Create / edit dialog */}
       <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>

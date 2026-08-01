@@ -31,6 +31,9 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
 import { computeGst, printReceipt, shareReceiptPdf } from "@/lib/receipt";
 import { useBusiness } from "@/components/BusinessContext";
@@ -47,6 +50,10 @@ export default function PosPage() {
   const [tax, setTax] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [customerName, setCustomerName] = useState("");
+  const [customer, setCustomer] = useState(null);
+  const [custSearch, setCustSearch] = useState("");
+  const [custResults, setCustResults] = useState([]);
+  const [registerOpen, setRegisterOpen] = useState(null);
   const [toast, setToast] = useState(null);
   const [receipt, setReceipt] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -56,8 +63,14 @@ export default function PosPage() {
       .then((r) => r.json())
       .then((res) => setProducts(res.data || []));
 
+  const loadRegister = () =>
+    fetch("/api/register")
+      .then((r) => r.json())
+      .then((res) => setRegisterOpen(!!res.data));
+
   useEffect(() => {
     load();
+    loadRegister();
     fetch("/api/categories")
       .then((r) => r.json())
       .then((res) => setCategories(res.data || []));
@@ -65,6 +78,39 @@ export default function PosPage() {
       .then((r) => r.json())
       .then((res) => setMeInfo(res.data || null));
   }, []);
+
+  // Live customer search
+  useEffect(() => {
+    if (!custSearch.trim()) {
+      setCustResults([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      fetch(`/api/customers?q=${encodeURIComponent(custSearch)}`)
+        .then((r) => r.json())
+        .then((res) => setCustResults(res.data || []));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [custSearch]);
+
+  const addNewCustomer = async () => {
+    const name = custSearch.trim();
+    if (!name) return;
+    const isPhone = /^\d{6,}$/.test(name);
+    const res = await fetch("/api/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(isPhone ? { name: "Customer", phone: name } : { name }),
+    });
+    const json = await res.json();
+    if (res.ok) {
+      setCustomer(json.data);
+      setCustSearch("");
+      setCustResults([]);
+    } else {
+      setToast({ severity: "error", msg: json.error });
+    }
+  };
 
   // Categories that actually have products, for the top filter bar.
   const categoryNames = useMemo(() => {
@@ -180,7 +226,8 @@ export default function PosPage() {
           discount: Number(discount || 0),
           tax: Number(tax || 0),
           paymentMethod,
-          customerName: customerName || "Walk-in",
+          customerId: customer?._id || null,
+          customerName: customer?.name || customerName || "Walk-in",
         }),
       });
       const json = await res.json();
@@ -190,7 +237,10 @@ export default function PosPage() {
       setDiscount(0);
       setTax(0);
       setCustomerName("");
+      setCustomer(null);
+      setCustSearch("");
       load();
+      loadRegister();
     } catch (e) {
       setToast({ severity: "error", msg: e.message });
     } finally {
@@ -203,9 +253,24 @@ export default function PosPage() {
       <Typography variant="h4" sx={{ mb: 0.5 }}>
         Point of Sale
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Tap {isFood ? "an item" : "a product"} to add it to the bill
       </Typography>
+
+      {registerOpen === false && (
+        <Alert
+          severity="info"
+          icon={false}
+          sx={{ mb: 2, borderRadius: 3 }}
+          action={
+            <Button color="inherit" size="small" component={Link} href="/register">
+              Open Register
+            </Button>
+          }
+        >
+          The cash register is closed. Open it to track cash for the day.
+        </Alert>
+      )}
 
       <Grid container spacing={2.5}>
         {/* Product picker */}
@@ -391,6 +456,118 @@ export default function PosPage() {
                 )}
               </Box>
 
+              {/* Customer picker */}
+              {customer ? (
+                <Box
+                  sx={{
+                    mb: 1.5,
+                    p: 1.25,
+                    borderRadius: 2,
+                    bgcolor: "rgba(124,92,252,0.08)",
+                    border: "1px solid rgba(124,92,252,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <PersonRoundedIcon sx={{ color: "secondary.main" }} />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap>
+                      {customer.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {customer.phone || "no phone"} · {customer.points || 0} pts
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" onClick={() => setCustomer(null)}>
+                    <CloseRoundedIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Box sx={{ mb: 1.5, position: "relative" }}>
+                  <TextField
+                    label="Add customer (name or phone)"
+                    value={custSearch}
+                    onChange={(e) => setCustSearch(e.target.value)}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonRoundedIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {custSearch.trim() && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        zIndex: 5,
+                        left: 0,
+                        right: 0,
+                        mt: 0.5,
+                        bgcolor: "background.paper",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 2,
+                        boxShadow: 3,
+                        maxHeight: 200,
+                        overflowY: "auto",
+                      }}
+                    >
+                      {custResults.map((c) => (
+                        <Box
+                          key={c._id}
+                          onClick={() => {
+                            setCustomer(c);
+                            setCustSearch("");
+                            setCustResults([]);
+                          }}
+                          sx={{ px: 1.5, py: 1, cursor: "pointer", "&:hover": { bgcolor: "background.default" } }}
+                        >
+                          <Typography variant="body2" fontWeight={600}>
+                            {c.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {c.phone || "no phone"} · {c.points || 0} pts
+                          </Typography>
+                        </Box>
+                      ))}
+                      <Box
+                        onClick={addNewCustomer}
+                        sx={{ px: 1.5, py: 1, cursor: "pointer", borderTop: custResults.length ? "1px solid" : "none", borderColor: "divider", "&:hover": { bgcolor: "background.default" } }}
+                      >
+                        <Typography variant="body2" color="primary.main" fontWeight={600}>
+                          + Add &ldquo;{custSearch}&rdquo; as new customer
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* Discount presets */}
+              <Stack direction="row" spacing={0.75} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
+                {[
+                  { label: "5%", fn: () => Math.round(subTotal * 0.05) },
+                  { label: "10%", fn: () => Math.round(subTotal * 0.1) },
+                  { label: "₹20", fn: () => 20 },
+                  { label: "₹50", fn: () => 50 },
+                ].map((d) => (
+                  <Chip
+                    key={d.label}
+                    label={d.label}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setDiscount(d.fn())}
+                    disabled={!cart.length}
+                  />
+                ))}
+                {Number(discount) > 0 && (
+                  <Chip label="Clear" size="small" color="error" variant="outlined" onClick={() => setDiscount(0)} />
+                )}
+              </Stack>
+
               <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                 <TextField
                   label="Discount ₹"
@@ -406,22 +583,12 @@ export default function PosPage() {
                   onChange={(e) => setTax(e.target.value)}
                   fullWidth
                 />
-              </Stack>
-
-              <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-                <TextField
-                  label="Customer"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  fullWidth
-                  placeholder="Walk-in"
-                />
                 <TextField
                   select
                   label="Payment"
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  sx={{ minWidth: 120 }}
+                  sx={{ minWidth: 110 }}
                 >
                   <MenuItem value="cash">Cash</MenuItem>
                   <MenuItem value="upi">UPI</MenuItem>
@@ -515,6 +682,28 @@ export default function PosPage() {
                   </Box>
                 );
               })()}
+              {receipt.customerName && receipt.customerName !== "Walk-in" && (
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    p: 1.25,
+                    borderRadius: 2,
+                    bgcolor: "rgba(224,162,59,0.10)",
+                    border: "1px solid rgba(224,162,59,0.3)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <PersonRoundedIcon fontSize="small" sx={{ color: "warning.main" }} />
+                  <Typography variant="body2" sx={{ flex: 1 }}>
+                    {receipt.customerName}
+                  </Typography>
+                  {receipt.pointsEarned > 0 && (
+                    <Chip size="small" color="warning" label={`+${receipt.pointsEarned} pts`} />
+                  )}
+                </Box>
+              )}
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
                 Paid via {receipt.paymentMethod?.toUpperCase()}
               </Typography>
