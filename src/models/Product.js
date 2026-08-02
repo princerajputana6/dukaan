@@ -17,6 +17,8 @@ const ProductSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     sku: { type: String, trim: true, index: true, default: "" },
     barcode: { type: String, trim: true, default: "" },
+    // Optional product photo, stored as a small resized JPEG data URL.
+    image: { type: String, default: "" },
     category: { type: String, trim: true, default: "Uncategorized" },
     unit: { type: String, default: "pcs" }, // pcs, pack, box, kg, ltr
     costPrice: { type: Number, default: 0, min: 0 },

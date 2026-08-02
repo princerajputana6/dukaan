@@ -12,7 +12,11 @@ import {
   Button,
   Autocomplete,
   Box,
+  Typography,
+  IconButton,
 } from "@mui/material";
+import AddPhotoAlternateRoundedIcon from "@mui/icons-material/AddPhotoAlternateRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useBusiness } from "@/components/BusinessContext";
 
 const UNITS = ["pcs", "pack", "box", "kg", "gm", "ltr", "ml", "strip"];
@@ -28,13 +32,56 @@ const EMPTY = {
   stock: "",
   lowStockThreshold: 10,
   supplier: "",
+  image: "",
 };
+
+// Downscale an uploaded image to a small JPEG data URL so it stays light in the
+// database and in the product list payload.
+async function fileToThumbnail(file, max = 640, quality = 0.72) {
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(new Error("read failed"));
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise((res, rej) => {
+    const i = new window.Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error("bad image"));
+    i.src = dataUrl;
+  });
+  const scale = Math.min(1, max / Math.max(img.width, img.height));
+  const width = Math.round(img.width * scale);
+  const height = Math.round(img.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", quality);
+}
 
 export default function ProductDialog({ open, onClose, onSaved, product, categories }) {
   const { labels } = useBusiness();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [imgBusy, setImgBusy] = useState(false);
+
+  const handleImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    setImgBusy(true);
+    setError("");
+    try {
+      const thumb = await fileToThumbnail(file);
+      setForm((f) => ({ ...f, image: thumb }));
+    } catch {
+      setError("Could not process that image. Try a different file.");
+    } finally {
+      setImgBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (product) {
@@ -99,6 +146,62 @@ export default function ProductDialog({ open, onClose, onSaved, product, categor
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 0 }}>
+          <Grid item xs={12}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  bgcolor: "background.default",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {form.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.image}
+                    alt="product"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <AddPhotoAlternateRoundedIcon sx={{ color: "text.disabled" }} />
+                )}
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Button
+                    component="label"
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddPhotoAlternateRoundedIcon />}
+                    disabled={imgBusy}
+                  >
+                    {imgBusy ? "Processing…" : form.image ? "Change image" : "Upload image"}
+                    <input type="file" accept="image/*" hidden onChange={handleImage} />
+                  </Button>
+                  {form.image && (
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => setForm((f) => ({ ...f, image: "" }))}
+                    >
+                      <DeleteOutlineRoundedIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                  Optional — shown as the product background in POS
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
           <Grid item xs={12}>
             <TextField
               label={`${labels.Item} name`}

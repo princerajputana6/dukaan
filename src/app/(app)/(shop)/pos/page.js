@@ -339,21 +339,52 @@ export default function PosPage() {
           <Grid container spacing={1.5}>
             {filtered.map((p) => {
               const out = p.stock <= 0;
+              const hasImg = !!p.image;
               return (
                 <Grid item xs={6} sm={4} lg={3} key={p._id}>
                   <Card
                     onClick={() => addToCart(p)}
                     sx={{
+                      position: "relative",
+                      overflow: "hidden",
                       cursor: out ? "not-allowed" : "pointer",
                       opacity: out ? 0.55 : 1,
                       transition: "all .15s",
+                      ...(hasImg && {
+                        backgroundImage: `url(${p.image})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }),
                       "&:hover": {
                         borderColor: out ? "divider" : "primary.main",
                         boxShadow: out ? "none" : "0 4px 16px rgba(47,126,218,.14)",
                       },
                     }}
                   >
-                    <CardContent sx={{ p: 1.75, "&:last-child": { pb: 1.75 } }}>
+                    {hasImg && (
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(to top, rgba(0,0,0,.74) 0%, rgba(0,0,0,.4) 55%, rgba(0,0,0,.18) 100%)",
+                          backdropFilter: "blur(1px)",
+                        }}
+                      />
+                    )}
+                    <CardContent
+                      sx={{
+                        position: "relative",
+                        p: 1.75,
+                        "&:last-child": { pb: 1.75 },
+                        ...(hasImg && {
+                          minHeight: 104,
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "flex-end",
+                        }),
+                      }}
+                    >
                       <Typography
                         variant="body2"
                         fontWeight={600}
@@ -363,6 +394,10 @@ export default function PosPage() {
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
+                          ...(hasImg && {
+                            color: "#fff",
+                            textShadow: "0 1px 3px rgba(0,0,0,.85)",
+                          }),
                         }}
                       >
                         {p.name}
@@ -373,7 +408,14 @@ export default function PosPage() {
                         alignItems="center"
                         sx={{ mt: 1 }}
                       >
-                        <Typography fontWeight={700} color="primary.main">
+                        <Typography
+                          fontWeight={700}
+                          sx={
+                            hasImg
+                              ? { color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,.85)" }
+                              : { color: "primary.main" }
+                          }
+                        >
                           {formatCurrency(p.sellingPrice)}
                         </Typography>
                         <Chip
@@ -381,6 +423,15 @@ export default function PosPage() {
                           label={out ? "Out" : `${p.stock}`}
                           color={out ? "error" : "default"}
                           variant="outlined"
+                          sx={
+                            hasImg && !out
+                              ? {
+                                  color: "#fff",
+                                  borderColor: "rgba(255,255,255,.7)",
+                                  bgcolor: "rgba(0,0,0,.25)",
+                                }
+                              : undefined
+                          }
                         />
                       </Stack>
                     </CardContent>
@@ -636,7 +687,19 @@ export default function PosPage() {
       </Grid>
 
       {/* Receipt dialog */}
-      <Dialog open={!!receipt} onClose={() => setReceipt(null)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={!!receipt}
+        onClose={() => setReceipt(null)}
+        maxWidth="xs"
+        fullWidth
+        onKeyDown={(e) => {
+          // Enter dismisses the receipt and starts a new sale.
+          if (e.key === "Enter") {
+            e.preventDefault();
+            setReceipt(null);
+          }
+        }}
+      >
         <DialogTitle sx={{ textAlign: "center" }}>
           <CheckCircleRoundedIcon color="success" sx={{ fontSize: 48 }} />
           <Typography variant="h6" component="div" sx={{ mt: 1 }}>
