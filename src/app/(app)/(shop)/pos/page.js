@@ -126,13 +126,19 @@ export default function PosPage() {
     if (categoryFilter !== "all") {
       list = list.filter((p) => p.category === categoryFilter);
     }
-    if (!search) return list;
-    const s = search.toLowerCase();
-    return list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(s) ||
-        (p.sku || "").toLowerCase().includes(s) ||
-        (p.barcode || "").toLowerCase().includes(s)
+    if (search) {
+      const s = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(s) ||
+          (p.sku || "").toLowerCase().includes(s) ||
+          (p.barcode || "").toLowerCase().includes(s)
+      );
+    }
+    // Push out-of-stock items to the bottom. Array.sort is stable, so items
+    // otherwise keep their original (recently-added-first) order.
+    return [...list].sort(
+      (a, b) => (a.stock <= 0 ? 1 : 0) - (b.stock <= 0 ? 1 : 0)
     );
   }, [products, search, categoryFilter]);
 

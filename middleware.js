@@ -16,7 +16,7 @@ const PUBLIC_PAGES = [
 // App routes and the roles allowed to see them
 const SUPERADMIN_ONLY = ["/admin"];
 const ADMIN_ONLY = ["/stores", "/team", "/plan"];
-const OPERATIONAL = ["/dashboard", "/pos", "/register", "/products", "/low-stock", "/categories", "/customers", "/sales"];
+const OPERATIONAL = ["/dashboard", "/pos", "/register", "/products", "/low-stock", "/categories", "/customers", "/sales", "/reports", "/projections"];
 
 function startsWithAny(path, list) {
   return list.some((p) => path === p || path.startsWith(p + "/"));

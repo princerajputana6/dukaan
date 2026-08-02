@@ -148,9 +148,8 @@ export async function generativeHeadline(facts, insights) {
     const client = new Anthropic();
     const bullets = insights.map((i) => `- ${i.text}`).join("\n");
     const response = await client.messages.create({
-      model: "claude-opus-5",
+      model: "claude-haiku-4-5",
       max_tokens: 200,
-      thinking: { type: "adaptive" },
       system:
         "You are a concise retail analyst for a small Indian shop owner. Given data points, write ONE friendly, plain-English sentence summarising what the owner should focus on today. No preamble, no markdown.",
       messages: [

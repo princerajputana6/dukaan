@@ -26,48 +26,17 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 
-// Heuristic parser: pull item name + qty + price out of noisy OCR text.
-function parseReceipt(text) {
-  const rows = [];
-  for (const raw of text.split("\n")) {
-    const line = raw.trim();
-    if (line.length < 3) continue;
-    if (
-      /total|gst|cgst|sgst|cash|qty|rate|amount|descript|invoice|bill|thank|tax|sub_?tot|change|balance|round|item=|m\/c|copy|no\./i.test(
-        line
-      )
-    )
-      continue;
-    const firstNumIdx = line.search(/\d/);
-    if (firstNumIdx < 1) continue;
-    const name = line
-      .slice(0, firstNumIdx)
-      .replace(/[^a-zA-Z &]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!name || name.length < 2) continue;
-    const nums = (line.slice(firstNumIdx).match(/\d+(?:[.,]\d+)?/g) || []).map((n) =>
-      parseFloat(n.replace(/,/g, ""))
-    );
-    if (nums.length === 0) continue;
-    let qty = 1;
-    let cost = nums[nums.length - 1];
-    if (nums.length >= 2) {
-      qty = nums[0] && nums[0] < 1000 ? nums[0] : 1;
-      cost = nums[nums.length - 1];
-    }
-    rows.push({
-      name: name.replace(/\b\w/g, (c) => c.toUpperCase()),
-      qty: Math.max(1, Math.round(qty)),
-      cost: cost || 0,
-      selling: cost || 0,
-      category: "",
-    });
-  }
-  return rows;
-}
-
 const EMPTY_ROW = { name: "", qty: 1, cost: 0, selling: 0, category: "" };
+
+// Read a File as a base64 data URL for upload to the AI scan endpoint.
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function ReceiptImportDialog({ open, onClose, onImported, categories = [] }) {
   const fileRef = useRef(null);
@@ -95,17 +64,27 @@ export default function ReceiptImportDialog({ open, onClose, onImported, categor
     setStatus("scanning");
     setProgress(0);
     try {
-      const Tesseract = (await import("tesseract.js")).default;
-      const result = await Tesseract.recognize(file, "eng", {
-        logger: (m) => {
-          if (m.status === "recognizing text") setProgress(Math.round(m.progress * 100));
-        },
+      const image = await fileToDataUrl(file);
+      const res = await fetch("/api/products/receipt-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
       });
-      const parsed = parseReceipt(result.data.text || "");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Could not read the receipt");
+      const parsed = (json.data?.items || []).map((it) => ({
+        name: it.name || "",
+        qty: Math.max(1, Math.round(Number(it.quantity) || 1)),
+        cost: Number(it.costPrice) || 0,
+        selling: Number(it.sellingPrice) || Number(it.costPrice) || 0,
+        category: it.category && it.category !== "Uncategorized" ? it.category : "",
+      }));
       setRows(parsed.length ? parsed : [{ ...EMPTY_ROW }]);
       setStatus("review");
     } catch (err) {
-      setError("Could not read the image. You can still add items manually below.");
+      setError(
+        `${err.message}. You can still add items manually below.`
+      );
       setRows([{ ...EMPTY_ROW }]);
       setStatus("review");
     }
@@ -183,8 +162,8 @@ export default function ReceiptImportDialog({ open, onClose, onImported, categor
             <UploadFileRoundedIcon sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
             <Typography variant="h6">Upload a supplier receipt</Typography>
             <Typography variant="body2" color="text.secondary">
-              Take a photo or choose an image. We&apos;ll read the items so you can review
-              and add them to your inventory.
+              Take a photo or choose an image. Our AI reads the items, quantities
+              and prices so you can review and add them to your inventory.
             </Typography>
           </Box>
         )}
@@ -199,8 +178,11 @@ export default function ReceiptImportDialog({ open, onClose, onImported, categor
                 style={{ maxHeight: 160, borderRadius: 8, marginBottom: 16 }}
               />
             )}
-            <Typography gutterBottom>Reading receipt… {progress}%</Typography>
-            <LinearProgress variant="determinate" value={progress} sx={{ maxWidth: 360, mx: "auto" }} />
+            <Typography gutterBottom>Reading your receipt with AI…</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This usually takes a few seconds.
+            </Typography>
+            <LinearProgress sx={{ maxWidth: 360, mx: "auto" }} />
           </Box>
         )}
 

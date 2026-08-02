@@ -38,6 +38,7 @@ import MarkEmailUnreadRoundedIcon from "@mui/icons-material/MarkEmailUnreadRound
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
+import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import Logo from "@/components/Logo";
 import { BusinessProvider } from "@/components/BusinessContext";
@@ -61,6 +62,7 @@ const NAV_BY_ROLE = {
     { label: "Customers", href: "/customers", icon: <PeopleAltRoundedIcon /> },
     { label: "Sales", href: "/sales", icon: <ReceiptLongRoundedIcon /> },
     { label: "Reports", href: "/reports", icon: <InsightsRoundedIcon /> },
+    { label: "AI Projections", href: "/projections", icon: <TrendingUpRoundedIcon /> },
     { section: "Management" },
     { label: "Stores", href: "/stores", icon: <StoreMallDirectoryRoundedIcon /> },
     { label: "Team", href: "/team", icon: <GroupRoundedIcon /> },
@@ -76,6 +78,7 @@ const NAV_BY_ROLE = {
     { label: "Categories", href: "/categories", icon: <CategoryRoundedIcon /> },
     { label: "Customers", href: "/customers", icon: <PeopleAltRoundedIcon /> },
     { label: "Sales", href: "/sales", icon: <ReceiptLongRoundedIcon /> },
+    { label: "AI Projections", href: "/projections", icon: <TrendingUpRoundedIcon /> },
   ],
 };
 
