@@ -26,6 +26,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
+import MoveToInboxRoundedIcon from "@mui/icons-material/MoveToInboxRounded";
 import PointOfSaleRoundedIcon from "@mui/icons-material/PointOfSaleRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
@@ -57,6 +58,7 @@ const NAV_BY_ROLE = {
     { label: "Point of Sale", href: "/pos", icon: <PointOfSaleRoundedIcon /> },
     { label: "Register", href: "/register", icon: <AccountBalanceWalletRoundedIcon /> },
     { label: "Inventory", href: "/products", icon: <Inventory2RoundedIcon /> },
+    { label: "Inventory Added", href: "/inventory-log", icon: <MoveToInboxRoundedIcon /> },
     { label: "Low Stock", href: "/low-stock", icon: <WarningAmberRoundedIcon /> },
     { label: "Categories", href: "/categories", icon: <CategoryRoundedIcon /> },
     { label: "Customers", href: "/customers", icon: <PeopleAltRoundedIcon /> },
@@ -74,6 +76,7 @@ const NAV_BY_ROLE = {
     { label: "Point of Sale", href: "/pos", icon: <PointOfSaleRoundedIcon /> },
     { label: "Register", href: "/register", icon: <AccountBalanceWalletRoundedIcon /> },
     { label: "Inventory", href: "/products", icon: <Inventory2RoundedIcon /> },
+    { label: "Inventory Added", href: "/inventory-log", icon: <MoveToInboxRoundedIcon /> },
     { label: "Low Stock", href: "/low-stock", icon: <WarningAmberRoundedIcon /> },
     { label: "Categories", href: "/categories", icon: <CategoryRoundedIcon /> },
     { label: "Customers", href: "/customers", icon: <PeopleAltRoundedIcon /> },

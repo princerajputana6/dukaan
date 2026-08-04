@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { resolveScope } from "@/lib/scope";
+import { logStockEntry } from "@/lib/stockLog";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,8 @@ export async function POST(request) {
       business: scope.businessId,
       store: scope.storeId,
     });
+    // Log the opening stock as an inventory addition.
+    await logStockEntry(scope, product, product.stock, "new");
     return NextResponse.json({ data: product }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
